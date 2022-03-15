@@ -48,7 +48,9 @@ ApiConnector.getInstance('legacy', {
 })
 ```
 You can call the `.getInstance('legacy', {...})` multiple times to overwrite certain options.
+
 **Note**: For all other instances except the default one, you need to specify the same name used at initialization when you want to use them.
+
 Once the initialisation is done, the **ApiConnector** can be used like a classic **[axios](https://github.com/axios/axios#instance-methods)** instance quoting its name:
 ```
 const legacyInstance = ApiConnector.getInstance('legacy')
@@ -66,6 +68,7 @@ The following options can be used on top of the [**axios** options](https://gith
 - `cancelRepeatedRequests` - enable repeated request cancellation; if the current request did not completeded before a new same request was made, it will be cancelled, favouring the new one.
 - `stepUpAuthEnabled` - flag to enable StepUp Authentication (reauthentication with user/password) before the request will be processed; defaut `false`
 - `useReactotron` - flag to enable **[Reactotron](https://github.com/infinitered/reactotron)** debugging for web apps. This is not required for `react-native` projects, as **Reactotron** is automatically supported if correctly imported and configured; default `false`
+
 **Note**: Don't forget to add **axios** mandatory parameter `baseURL`.
 ### Usage examples
 The **ApiConnector** instances are **axios** instances so they can be used as expected.
@@ -126,5 +129,5 @@ The `headers` will contain both `X-ApiKey` and `Authorization` headers. Keep in 
 If the `stepUpAuthEnabled` option is enabled and a request responded with status code `403 Forbidden` and there is a `transactionId` value present in the `response.data`, then the request can be retried by calling the `stepUp` method. This assumes the presence of an endpoint `/v1/oauth2/stepup` which takes `username` and `passcode` as payload and `X-TransactionId` in headers.
 When calling `stepUp` method, the `username` and `passcode` should be provided. This will force a reauthentication before the original request will be retried.
 
-## Note: Why ApiConnectorLite
-The `ApiConnector` (for now in a private github repo) includes an `HTTP` adapter from  **[Cryptomathic](https://www.cryptomathic.com/)** which can be used instead of the current **[axios](https://github.com/axios/axios)** one, for increased security. This is not an opensource software, thus the reason for the private repo.
+## Why ApiConnectorLite?
+The `ApiConnector` (for now in a private github repo) includes an `HTTP` adapter from  **[Cryptomathic](https://www.cryptomathic.com/)** which can optionally replace the current **[axios](https://github.com/axios/axios)** one, for increased, banking-grade security. This is not an opensource software, thus the private repo.
