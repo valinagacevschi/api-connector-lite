@@ -2,6 +2,13 @@
 An [axios](https://github.com/axios/axios)-based API connector to handle complex aspects of real-life APIs. 
 This API connector can be used with any Javascript framework currently supported by [axios](https://github.com/axios/axios).
 
+## Features
+1. **Mutiple instances** - support multiple instances for multiple APIs.
+2. **JWT / Bearer Authentication** - for any request which return `accessToken` and `refreshToken`, those are internally stored. The `accessToken` will be included in the headers as `Bearer` token for all requests. The `refreshToken` will be internally used for `/v1/oauth2/refresh` endpoint.
+3. **Retry on Timeout** - if a request will timeout, either by the server or with `504 Gateway timeout` it will be automatically retried with increased timeout.
+4. **Idempotency Support** - all `POST`, `PUT` and `PATCH` requests will automatically include an idempotency key in the header (`Idempotency-Key`) as a hash build from the request's URL and payload, in `uuidv4` format.
+5. **Cancel Repeated Requests** - if an identical request is sent more than once, any future requests are canceled until the initial one responded.
+6. **StepUp Support** - Require users to authenticate with a stronger mechanism to access sensitive information or perform certain transactions.
 ## Instalation
 You can use either `npm` or `yarn` to add it to your project.
 `yarn add api-connector-lite` or `npm install api-connector-lite`
