@@ -16,7 +16,7 @@ export type ConnectionConfig = AxiosRequestConfig & {
   autoRefreshToken?: boolean
   stepUpAuthEnabled?: boolean
   useIdempotency?: boolean
-  cancelRepeatedRequests?: boolean
+  cancelOldRequest?: boolean
   retryOnTimeout?: boolean
   useReactotron?: boolean
 }
@@ -25,7 +25,7 @@ type AxiosRetriableRequestConfig = AxiosRequestConfig & {
   didRetry: boolean
 }
 
-export type AxiosErrorWithRetryLogic = AxiosError & {
+export type AxiosErrorWithRetriableRequestConfig = AxiosError & {
   config: AxiosRetriableRequestConfig
 }
 

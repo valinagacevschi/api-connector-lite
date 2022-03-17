@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import * as debugWebAxios from './adapters/debugWebAxios'
 import {
   AsyncResponse,
-  AxiosErrorWithRetryLogic,
+  AxiosErrorWithRetriableRequestConfig,
   ConnectionConfig,
   ErrorResponse,
   ExtendedAxiosInstance,
@@ -29,7 +29,7 @@ const ApiConnector = (() => {
     const {
       autoRefreshToken = true,
       useIdempotency = true,
-      cancelRepeatedRequests = true,
+      cancelOldRequest,
       stepUpAuthEnabled = false,
       retryOnTimeout = true,
       useReactotron = false,
@@ -84,7 +84,7 @@ const ApiConnector = (() => {
     })
     instance.interceptors.request.use(cancelRequestInterceptor, undefined, {
       synchronous: true,
-      runWhen: () => cancelRepeatedRequests,
+      runWhen: () => cancelOldRequest !== undefined,
     })
     /**
      * Add Response Interceptors
@@ -93,13 +93,13 @@ const ApiConnector = (() => {
       cancelResponseInterceptor,
       cancelErrorInterceptor,
       {
-        runWhen: () => cancelRepeatedRequests,
+        runWhen: () => cancelOldRequest !== undefined,
       },
     )
     instance.interceptors.response.use(storeTokensInterceptor, refreshTokenInterceptor, {
       runWhen: () => autoRefreshToken,
     })
-    instance.interceptors.response.use(undefined, stepUpInterceptor, {
+    instance.interceptors.response.use(undefined, stepUpAuthInterceptor, {
       runWhen: () => stepUpAuthEnabled,
     })
     instance.interceptors.response.use(undefined, timeOutInterceptor, {
@@ -123,9 +123,6 @@ const ApiConnector = (() => {
     /**
      * Private interceptor
      * Add Idempotency-Key to POST, PUT and PATCH methods
-     * Since useIdempotency is a global flag, we might conditionally add
-     * the interceptor, instead of checking it at each request.
-     * This support will be available in the next AXIOS version.
      */
     function idempotencyInterceptor(
       requestConfig: AxiosRequestConfig,
@@ -140,20 +137,17 @@ const ApiConnector = (() => {
     /**
      * Private interceptor
      * Add cancelToken to request config to be able to cancel repeated
-     * requests. If the url was already used it will be canceled and the
-     * new request will be performed.
-     * Since cancelRepeatedRequests is a global flag, we might
-     * conditionally add the interceptor, instead of checking it
-     * at each request.
-     * This support will be available in the next AXIOS version.
+     * requests. If the url was already used and the cancelOldRequest flag is true,
+     * the old request will be canceled and the new request will be performed, or
+     * the new request will be canceled and the old will be preserved.
      */
     function cancelRequestInterceptor(
       requestConfig: AxiosRequestConfig,
     ): AxiosRequestConfig {
       const key = requestConfig?.url ?? ''
       if (currentExecutingRequests[key]) {
-        const source = currentExecutingRequests[key]
-        delete currentExecutingRequests[key]
+        const source = cancelOldRequest ? currentExecutingRequests[key] : axios.CancelToken.source()
+        delete currentExecutingRequests[cancelOldRequest ? key : '']
         source.cancel()
       }
 
@@ -168,16 +162,13 @@ const ApiConnector = (() => {
     /**
      * Private interceptor
      * Inspect every response and remove pending requests from
-     * currentExecutingRequests object if the cancelRepeatedRequests
-     * flag is set.
+     * currentExecutingRequests object.
      * @param response: AxiosResponse<RefreshTokenResponse>
      */
     function cancelResponseInterceptor(
       response: AxiosResponse<RefreshTokenResponse>,
     ): AxiosResponse<RefreshTokenResponse> {
-      if (cancelRepeatedRequests) {
         delete currentExecutingRequests[response.request?.responseURL]
-      }
       return response
     }
 
@@ -185,14 +176,10 @@ const ApiConnector = (() => {
      * Private interceptor
      * If the request failed because it was canceled, the error will
      * be silently discarded. On any other error, it will remove pending
-     * requests from currentExecutingRequests object if the
-     * cancelRepeatedRequests flag is set.
-     * @param error: AxiosErrorWithRetryLogic
+     * requests from currentExecutingRequests object.
+     * @param error: AxiosErrorWithRetriableRequestConfig
      */
-    function cancelErrorInterceptor(error: AxiosErrorWithRetryLogic) {
-      if (!cancelRepeatedRequests) {
-        return Promise.reject(error)
-      }
+    function cancelErrorInterceptor(error: AxiosErrorWithRetriableRequestConfig) {
       if (axios.isCancel(error)) {
         return Promise.resolve()
       }
@@ -231,9 +218,9 @@ const ApiConnector = (() => {
     /**
      * Private interceptor
      * If request failed with timeout or 504 timeout.
-     * @param error: AxiosErrorWithRetryLogic
+     * @param error: AxiosErrorWithRetriableRequestConfig
      */
-     function timeOutInterceptor(error: AxiosErrorWithRetryLogic) {
+     function timeOutInterceptor(error: AxiosErrorWithRetriableRequestConfig) {
       const { config, response, code, message } = error
       const { status } = response ?? {}
       if ((code === 'ECONNABORTED' && message.match(/timeout/)) || status === 504) {
@@ -248,9 +235,9 @@ const ApiConnector = (() => {
     /**
      * Private interceptor
      * If request failed with status 401 accessToken expiration, refresh tokens.
-     * @param error: AxiosErrorWithRetryLogic
+     * @param error: AxiosErrorWithRetriableRequestConfig
      */
-    function refreshTokenInterceptor(error: AxiosErrorWithRetryLogic) {
+    function refreshTokenInterceptor(error: AxiosErrorWithRetriableRequestConfig) {
       const { response: { status, data = {} } = {}, config } = error
 
       if (status === ACCESS_TOKEN_EXPIRED) {
@@ -268,9 +255,9 @@ const ApiConnector = (() => {
     /**
      * Private interceptor
      * If request failed with status 403 stepup required.
-     * @param error: AxiosErrorWithRetryLogic
+     * @param error: AxiosErrorWithRetriableRequestConfig
      */
-     function stepUpInterceptor(error: AxiosErrorWithRetryLogic) {
+     function stepUpAuthInterceptor(error: AxiosErrorWithRetriableRequestConfig) {
       const { response, config } = error
       const { status, data } = response || {}
       const { transactionId, requestPayload, authenticationMethods } = data || {}
