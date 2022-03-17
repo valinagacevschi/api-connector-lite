@@ -257,18 +257,14 @@ const ApiConnector = (() => {
      * If request failed with status 403 stepup required.
      * @param error: AxiosErrorWithRetriableRequestConfig
      */
-     function stepUpAuthInterceptor(error: AxiosErrorWithRetriableRequestConfig) {
+    function stepUpAuthInterceptor(error: AxiosErrorWithRetriableRequestConfig) {
       const { response, config } = error
       const { status, data } = response || {}
-      const { transactionId, requestPayload, authenticationMethods } = data || {}
+      const { transactionId, authenticationMethods } = data || {}
 
       if (status === STEP_UP_REQUIRED && transactionId) {
         config.headers ??= {}
         config.headers['X-TransactionId'] = `${transactionId}`
-        config.data = JSON.stringify({
-          ...requestPayload,
-          transactionId,
-        })
         stepUpPayload.transactionId = transactionId
         stepUpPayload.authenticationMethods = authenticationMethods
         stepUpPayload.config = config
