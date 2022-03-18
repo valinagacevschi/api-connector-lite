@@ -4,7 +4,8 @@
   "description": "An axios-based API connector to handle complex aspects of real-life APIs.",
   "main": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "ava -s",
+    "test:w": "ava --watch"
   },
   "dependencies": {
     "axios": "^0.26"
@@ -16,7 +17,9 @@
   "keywords": [
     "axios",
     "API",
-    "SDK"
+    "SDK",
+    "network",
+    "http"
   ],
   "author": "V.Nagacevschi",
   "license": "GPL-3.0-or-later",
@@ -25,15 +28,29 @@
   },
   "homepage": "https://github.com/10xfuturetechnologies/api-connector#readme",
   "devDependencies": {
+    "ava": "^4.1.0",
     "eslint": "^6.5.1",
     "eslint-config-prettier": "^6.15.0",
     "eslint-plugin-prettier": "^3.2.0",
     "eslint-plugin-react": "^7.21.5",
     "eslint-plugin-react-native": "^3.10.0",
     "prettier": "^2.0.2",
-    "reactotron-react-native": "^5.0.0",
     "ts-jest": "^26.4.4",
+    "ts-node": "^10.7.0",
     "tslint": "^5.12.1",
     "typescript": "^4.0.0"
+  },
+  "ava": {
+    "files": [
+      "tests/**/*.ts",
+      "!tests/setup.ts"
+    ],
+    "extensions": [
+      "js",
+      "ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ]
   }
 }
