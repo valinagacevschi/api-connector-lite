@@ -18,7 +18,7 @@ You can use either `npm` or `yarn` to add it to your project.
 # Quick Start
 ```javascript
 // in main or config file
-import ApiConnector from 'api-connector-lite'
+import { ApiConnector } from 'api-connector-lite'
 
 ApiConnector.getInstance('default', {
   baseURL: 'https://my-platform.com/v1',
@@ -27,7 +27,7 @@ ApiConnector.getInstance('default', {
 })
 
 // later, maybe in another file
-import ApiConnector from 'api-connector-lite'
+import { ApiConnector } from 'api-connector-lite'
 
 const result = await ApiConnector.getInstance().get('/products').then(response => response?.data)
 ```
@@ -35,7 +35,7 @@ const result = await ApiConnector.getInstance().get('/products').then(response =
 ## Import
 You can import the API connector in any of your `.js` or `.ts` file.
 ```javascript
-import ApiConnector from 'api-connector-lite'
+import { ApiConnector } from 'api-connector-lite'
 ```
 ## Initialisation
 **ApiConnector** supports multiple **[axios](https://github.com/axios/axios)** instances by using different connection names. The name for the implicit instance is `default`.
@@ -92,7 +92,6 @@ The following options can be used on top of the [**axios** options](https://gith
 - `useIdempotency` - enable static idempotency key calculation based on payload for `post`, `put` and `patch` methods; default `true`
 - `cancelOldRequests` - enable repeated request cancellation; if the current request did not completeded before a new same request was made, either the existing request or the new request will be cancelled, depending on this flag's value; default `undefined` (disabled).
 - `stepUpAuthEnabled` - flag to enable StepUp Authentication (reauthentication with user/password) before the request will be processed; defaut `false`
-- `useReactotron` - flag to enable **[Reactotron](https://github.com/infinitered/reactotron)** debugging for web apps. This is not required for `react-native` projects, as **Reactotron** is automatically supported if correctly imported and configured; default `false`
 
 **Note**: Don't forget to add **axios** mandatory parameter `baseURL`.
 ## Usage examples

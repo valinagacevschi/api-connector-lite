@@ -1,5 +1,4 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
-import * as debugWebAxios from './adapters/debugWebAxios'
 import {
   AsyncResponse,
   AxiosErrorWithRetriableRequestConfig,
@@ -59,8 +58,7 @@ const ApiConnector = (() => {
      * Create main instance. Can be an axios instance or a debugWebAxios instance with reactotron 
      * support for web
      */
-    const factory = (window?.location && useReactotron) ? debugWebAxios : axios
-    const instance = factory.create({
+    const instance = axios.create({
       ...DEFAULT_CONFIG,
       ...axiosConfig,
     }) as ExtendedAxiosInstance
@@ -225,11 +223,11 @@ const ApiConnector = (() => {
       const { status } = response ?? {}
       if ((code === 'ECONNABORTED' && message.match(/timeout/)) || status === 504) {
         const { timeout, ...request } = config
-        if ((timeout ?? 1e10) > 6e4) {
-          return Promise.reject(error)
+        if ((timeout ?? 1e10) < 6e4) {
+          instance.request({ ...request, timeout: (timeout ?? 1e3) * 10 })
         }
-        instance.request({ ...request, timeout: (timeout ?? 1e3) * 10 })
       }
+      return Promise.reject(error)
     }
 
     /**
@@ -279,7 +277,7 @@ const ApiConnector = (() => {
     /**
      * Create a separate axions instance for auth refresh token
      */
-     const refreshInstance: AxiosInstance = factory.create({ ...DEFAULT_CONFIG, ...axiosConfig, headers })
+     const refreshInstance: AxiosInstance = axios.create({ ...DEFAULT_CONFIG, ...axiosConfig, headers })
 
     /**
      * The refreshToken handler will be accessible from the instance
