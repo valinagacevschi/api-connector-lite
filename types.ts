@@ -5,11 +5,11 @@ export interface Headers {
 }
 
 export type ExtendedAxiosInstance = AxiosInstance & {
-    refreshToken: () => Promise<void>
-    updateHeaders: (headers: Headers) => void
-    getApiHeaders: () => Headers
-    stepUp: (username?: string, passcode?: string) => Promise<unknown>
-  }
+  refreshToken: () => Promise<void>
+  updateHeaders: (headers: Headers) => void
+  getApiHeaders: () => Headers
+  stepUp: (username?: string, passcode?: string) => Promise<unknown>
+}
 
 export type ConnectionConfig = AxiosRequestConfig & {
   apiKey?: string

@@ -166,7 +166,7 @@ const ApiConnector = (() => {
     function cancelResponseInterceptor(
       response: AxiosResponse<RefreshTokenResponse>,
     ): AxiosResponse<RefreshTokenResponse> {
-        delete currentExecutingRequests[response.request?.responseURL]
+      delete currentExecutingRequests[response.request?.responseURL]
       return response
     }
 
@@ -218,7 +218,7 @@ const ApiConnector = (() => {
      * If request failed with timeout or 504 timeout.
      * @param error: AxiosErrorWithRetriableRequestConfig
      */
-     function timeOutInterceptor(error: AxiosErrorWithRetriableRequestConfig) {
+    function timeOutInterceptor(error: AxiosErrorWithRetriableRequestConfig) {
       const { config, response, code, message } = error
       const { status } = response ?? {}
       if ((code === 'ECONNABORTED' && message.match(/timeout/)) || status === 504) {
@@ -255,18 +255,14 @@ const ApiConnector = (() => {
      * If request failed with status 403 stepup required.
      * @param error: AxiosErrorWithRetriableRequestConfig
      */
-     function stepUpAuthInterceptor(error: AxiosErrorWithRetriableRequestConfig) {
+    function stepUpAuthInterceptor(error: AxiosErrorWithRetriableRequestConfig) {
       const { response, config } = error
       const { status, data } = response || {}
-      const { transactionId, requestPayload, authenticationMethods } = data || {}
+      const { transactionId, authenticationMethods } = data || {}
 
       if (status === STEP_UP_REQUIRED && transactionId) {
         config.headers ??= {}
         config.headers['X-TransactionId'] = `${transactionId}`
-        config.data = JSON.stringify({
-          ...requestPayload,
-          transactionId,
-        })
         stepUpPayload.transactionId = transactionId
         stepUpPayload.authenticationMethods = authenticationMethods
         stepUpPayload.config = config
@@ -277,7 +273,7 @@ const ApiConnector = (() => {
     /**
      * Create a separate axions instance for auth refresh token
      */
-     const refreshInstance: AxiosInstance = axios.create({ ...DEFAULT_CONFIG, ...axiosConfig, headers })
+    const refreshInstance: AxiosInstance = axios.create({ ...DEFAULT_CONFIG, ...axiosConfig, headers })
 
     /**
      * The refreshToken handler will be accessible from the instance
@@ -298,7 +294,7 @@ const ApiConnector = (() => {
      * The updateHeaders handler will allow the headers to be consistently
      * updated on both the instance and the refreshInstance.
      */
-     function updateHeaders(headers: Headers) {
+    function updateHeaders(headers: Headers) {
       instance.defaults.headers = {
         ...instance.defaults.headers,
         ...headers,
@@ -401,7 +397,6 @@ export async function to<T>(promise: Promise<T>): Promise<AsyncResponse<T>> {
 }
 
 /**
- * 
  * Generate an idempotencyKey from the request URL and payload. The returned string 
  * is a uuidv4 format.
  * Inspired from cyrb53, a very fast, high quality, 53-bit hash algorithm.
@@ -409,10 +404,10 @@ export async function to<T>(promise: Promise<T>): Promise<AsyncResponse<T>> {
  * @param url request URL, string, optional
  * @returns unique 32 bytes uuidv4 hash
  */
-function idempotencyKeyFrom(data: unknown, url?: string): string {  
+function idempotencyKeyFrom(data: unknown, url?: string): string {
   let h1 = 0xdeadbeef, h2 = 0x41c6ce57, h3 = 0xfeadcabe, h4 = 0x93a5f713
-  
-  const str = typeof data === 'string' ? (data + url) : JSON.stringify(data) + url
+
+  const str = typeof data === 'string' ? data + url : JSON.stringify(data) + url
 
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i)
@@ -427,7 +422,7 @@ function idempotencyKeyFrom(data: unknown, url?: string): string {
   h3 = Math.imul(h3 ^ (h3 >>> 16), 1500450271) ^ Math.imul(h4 ^ (h4 >>> 13), 9576890767)
   h4 = Math.imul(h4 ^ (h4 >>> 16), 1500450271) ^ Math.imul(h3 ^ (h3 >>> 13), 9576890767)
 
-  const hash = 
+  const hash =
     (h4 >>> 0).toString(16).padStart(8, '0') + (h3 >>> 0).toString(16).padStart(8, '0') +
     (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0')
 

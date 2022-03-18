@@ -1,7 +1,6 @@
 # ApiConnector lite
 An [axios](https://github.com/axios/axios)-based API connector to handle complex aspects of real-life APIs. 
 This API connector can be used with any Javascript framework currently supported by [axios](https://github.com/axios/axios).
-
 # Features
 1. **Mutiple instances** - support multiple instances for multiple APIs.
 2. **JWT / Bearer Authentication** - for any request which return `accessToken` and `refreshToken`, those are internally stored. The `accessToken` will be included in the headers as `Bearer` token for all requests. The `refreshToken` will be internally used for `/v1/oauth2/refresh` endpoint.
@@ -45,7 +44,7 @@ The implicit instance is using the reserved `default` name.
 ```javascript
 ApiConnector.getInstance('default', {
   baseURL: 'https://my-platform.com/v1',
-  apiKey: 'the-api-key-to-use-for-this-environment,
+  apiKey: 'the-api-key-to-use-for-this-environment',
   autoRefreshToken: false, // turn off autoRefresh
   useIdempotency: false, // turn off idempotency support
   cancelOldRequests: false, // cancel new requests
@@ -135,12 +134,12 @@ const wasDeleted = await ApiConnector.getInstance()
 The returned **axios** instance was enhanced with some utility functions one can find useful.
 ### refreshToken
 Although the authentication tokens are refreshed when needed, there may be certain cases where you may want to force authentication tokens refresh. For that you can call:
-```
+```javascript
 ApiConnector.getInstance().refreshToken()
 ```
 ### updateHeaders
 There may be cases you want to add or update certain headers while preserving the authentication tokens. Thus, reinitialising the instance is not a viable solution. For that you can call, for example:
-```
+```javascript
 ApiConnector.getInstance().updateHeaders({ 'x-device-id': '000-111-222-333-999' })
 ```
 ### getApiHeaders
