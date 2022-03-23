@@ -1,6 +1,6 @@
 import test from 'ava'
-import { ApiConnector, to } from '../'
-import newServer, { Server } from './_server'
+import { ApiConnector } from '../'
+import newServer, { getFreePort, Server } from './_server'
 
 const HEADERS = {
   Accept: 'application/json',
@@ -8,14 +8,12 @@ const HEADERS = {
   'User-Agent': 'axios/0.26.0',
 }
 const MOCK = { a: { b: [1, 2, 3] } }
-let port = 8700
 let server: Server
 
 test.before(async () => {
+  const port = await getFreePort()
   server = await newServer(port, MOCK)
-  ApiConnector.getInstance('default', { 
-    baseURL: `http://localhost:8700`,
-  })
+  ApiConnector.getInstance('default', { baseURL: `http://localhost:${port}` })
 })
 
 test.after.always('cleanup', (t) => {

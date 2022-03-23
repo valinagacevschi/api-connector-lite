@@ -1,10 +1,81 @@
 import http from 'http'
+import net from 'net'
 
 type Request = http.IncomingMessage & {
-  post: unknown
+  post: Record<string, unknown>
 }
 
-function processPost(request: Request, response: unknown, callback: unknown) {
+export default (port: number, mockData = {}): Promise<http.Server> => {
+  return new Promise(resolve => {
+    const server = http.createServer((req, response) => {
+      const url = req.url
+      if (url === '/ok') {
+        send200(response)
+        return
+      }
+
+      if (url?.startsWith('/echo')) {
+        const echo = url.slice(6)
+        const params = url.includes('?') ? Object.fromEntries(new URLSearchParams(echo)) : undefined
+        sendResponse(response, 200, JSON.stringify({ echo, params }))
+        return
+      }
+
+      if (url?.startsWith('/number')) {
+        const status = +url.slice(8)
+        sendResponse(response, status, JSON.stringify(mockData))
+        return
+      }
+
+      if (url?.startsWith('/sleep')) {
+        const wait = +(url?.split('/')?.pop() ?? '0')
+        setTimeout(() => {
+          send200(response)
+        }, wait)
+        return
+      }
+
+      if (url?.startsWith('/post')) {
+        const status = +(url?.split('/')?.pop() ?? '200') || 200
+        const request = req as Request
+        processPost(request, response, function() {
+          sendResponse(response, status, JSON.stringify(request.post))
+        })
+      }
+
+      if (url?.startsWith('/v1/oauth2/refresh')) {
+        const request = req as Request
+        processPost(request, response, function() {
+          const refreshToken  = request.post.refreshToken as string
+          const tokens = {
+            accessToken: refreshToken,
+            refreshToken: refreshToken.split('').reverse().join()
+          }
+          sendResponse(response, 200, JSON.stringify(tokens))
+        })
+      }
+    })
+    server.listen(port, 'localhost', () => resolve(server))
+  })
+}
+
+
+type AddressInfo = {
+  address: string
+  family: string
+  port: number
+}
+
+export { Server } from 'http'
+export const getFreePort = (): Promise<number> => new Promise(resolve => {
+  const server = net.createServer()
+  server.listen(() => {
+    const { port } = server.address() as AddressInfo
+    server.close(() => resolve(port))
+  })
+})
+
+function processPost(request: Request, response: http.ServerResponse, callback?: Function) {
   let queryData = ''
   if (typeof callback !== 'function')
     return null
@@ -27,47 +98,5 @@ const sendResponse = (res: http.ServerResponse, statusCode: number, body: string
 }
 
 const send200 = (res: http.ServerResponse, body?: string) => {
-  sendResponse(res, 200, body || '{ status: "OK" }')
+  sendResponse(res, 200, body || '{ "status": "OK" }')
 }
-
-export default (port: number, mockData = {}): Promise<http.Server> => {
-  return new Promise(resolve => {
-    const server = http.createServer((req, res) => {
-      const url = req.url
-      if (url === '/ok') {
-        send200(res)
-        return
-      }
-
-      if (url?.startsWith('/echo')) {
-        const echo = url.slice(8)
-        sendResponse(res, 200, JSON.stringify({ echo }))
-        return
-      }
-
-      if (url?.startsWith('/number')) {
-        const status = +url.slice(8, 11)
-        sendResponse(res, status, JSON.stringify(mockData))
-        return
-      }
-
-      if (url?.startsWith('/sleep')) {
-        const wait = +(url?.split('/')?.pop() ?? '0')
-        setTimeout(() => {
-          send200(res)
-        }, wait)
-        return
-      }
-
-      if (url === '/post') {
-        const request = req as Request
-        processPost(request, res, function() {
-          sendResponse(res, 200, JSON.stringify({ got: request.post }))
-        })
-      }
-    })
-    server.listen(port, 'localhost', () => resolve(server))
-  })
-}
-
-export { Server } from 'http'
