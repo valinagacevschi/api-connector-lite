@@ -2,12 +2,11 @@ import test from 'ava'
 import { ApiConnector } from '../'
 import newServer, { getFreePort, Server } from './_server'
 
-const MOCK = { a: { b: [1, 2, 3] } }
 let server: Server
 
 test.before(async () => {
   const port = await getFreePort()
-  server = await newServer(port, MOCK)
+  server = await newServer(port)
   ApiConnector.getInstance('default', {
     baseURL: `http://localhost:${port}`,
     useResponseTime: true,

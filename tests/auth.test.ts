@@ -2,12 +2,11 @@ import test from 'ava'
 import { ApiConnector, idempotencyKeyFrom, to } from '../'
 import newServer, { getFreePort, Server } from './_server'
 
-const MOCK = { a: { b: [1, 2, 3] } }
 let server: Server
 
 test.before(async () => {
   const port = await getFreePort()
-  server = await newServer(port, MOCK)
+  server = await newServer(port)
   ApiConnector.getInstance('default', { baseURL: `http://localhost:${port}` })
 })
 
@@ -41,6 +40,7 @@ test('has new tokens when 401', async (t) => {
   t.is(response.status, 200)
   const { Authorization } = instance.getApiHeaders()
   t.is(Authorization, `Bearer ${payload.accessToken}`)
+  
   await instance.post('/post/401', { v: 1 }).catch((error) => {
     t.deepEqual(error, { v: 1 })
     const { Authorization } = instance.getApiHeaders()

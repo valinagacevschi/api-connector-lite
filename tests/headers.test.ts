@@ -6,7 +6,7 @@ let server: Server
 
 test.before(async t => {
   const port = await getFreePort()
-  server = await newServer(port, {})
+  server = await newServer(port)
   ApiConnector.getInstance('default', { baseURL: `http://localhost:${port}` })
 })
 
