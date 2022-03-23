@@ -1,11 +1,11 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse } from 'axios'
 import {
   AsyncResponse,
   AxiosErrorWithRetriableRequestConfig,
+  ConfigMetaData,
   ConnectionConfig,
   ErrorResponse,
   ExtendedAxiosInstance,
-  Headers,
   RefreshTokenResponse,
   StepUpPayload,
 } from './types'
@@ -16,11 +16,10 @@ const STEP_UP_REQUIRED = 403
 const STEPUP_PATH = '/v1/oauth2/stepup'
 
 const DEFAULT_CONFIG = { timeout: 3000 }
-const DEFAULT_HEADERS: Headers = {
+const DEFAULT_HEADERS: AxiosRequestHeaders = {
   'Accept': 'application/json',
   'Content-Type': 'application/json',
 }
-
 const ApiConnector = (() => {
   const instances: Record<string, ExtendedAxiosInstance> = {}
 
@@ -32,13 +31,14 @@ const ApiConnector = (() => {
       stepUpAuthEnabled = false,
       retryOnTimeout = true,
       useReactotron = false,
+      useResponseTime = false,
       headers: inputHeaders,
       ...axiosConfig
     } = config
 
     const { apiKey } = axiosConfig
 
-    const headers: Headers = {
+    const headers: AxiosRequestHeaders = {
       ...DEFAULT_HEADERS,
       // Add X-ApiKey header if it exists
       ...(apiKey ? { 'X-ApiKey': apiKey } : undefined),
@@ -84,6 +84,14 @@ const ApiConnector = (() => {
       synchronous: true,
       runWhen: () => cancelOldRequest !== undefined,
     })
+    instance.interceptors.request.use((config: AxiosRequestConfig & ConfigMetaData) => {
+      config.metadata = { ...config.metadata, startTime: +new Date()}
+      return config
+    }, undefined, {
+      synchronous: true,
+      runWhen: () => useResponseTime,
+    })
+
     /**
      * Add Response Interceptors
      */
@@ -102,6 +110,15 @@ const ApiConnector = (() => {
     })
     instance.interceptors.response.use(undefined, timeOutInterceptor, {
       runWhen: () => retryOnTimeout,
+    })
+    instance.interceptors.response.use((response) => {
+      updateResponseTime(response.config as ConfigMetaData)
+      return response
+    }, (error) => {
+      updateResponseTime(error.config)
+      return Promise.reject(error)
+    }, {
+      runWhen: () => useResponseTime,
     })
 
     /**
@@ -239,13 +256,12 @@ const ApiConnector = (() => {
       const { response: { status, data = {} } = {}, config } = error
 
       if (status === ACCESS_TOKEN_EXPIRED) {
-        if (config.didRetry) {
+        if (config.metadata?.didRetry) {
           return Promise.reject(data)
         }
-        config.didRetry = true
+        config.metadata = { ...config.metadata, didRetry: true }
         return refreshToken()
           .then(() => instance.request(config))
-          .catch((e) => console.warn('error', e))
       }
       return Promise.reject(error)
     }
@@ -294,15 +310,20 @@ const ApiConnector = (() => {
      * The updateHeaders handler will allow the headers to be consistently
      * updated on both the instance and the refreshInstance.
      */
-    function updateHeaders(headers: Headers) {
-      instance.defaults.headers = {
-        ...instance.defaults.headers,
-        ...headers,
+    function updateHeaders(headers: Partial<AxiosRequestHeaders>) {
+      const instanceHeaders = {
+        ...instance.defaults.headers.common,
+        ...headers as AxiosRequestHeaders,
       }
-      refreshInstance.defaults.headers = {
-        ...refreshInstance.defaults.headers,
-        ...headers,
+      Object.keys(instanceHeaders).forEach(key => instanceHeaders[key] === undefined && delete instanceHeaders[key])
+      instance.defaults.headers.common = instanceHeaders
+
+      const refreshHeaders = {
+        ...refreshInstance.defaults.headers.common,
+        ...headers as AxiosRequestHeaders,
       }
+      Object.keys(refreshHeaders).forEach(key => refreshHeaders[key] === undefined && delete refreshHeaders[key])
+      refreshInstance.defaults.headers.common = refreshHeaders
     }
 
     /**
@@ -404,7 +425,7 @@ export async function to<T>(promise: Promise<T>): Promise<AsyncResponse<T>> {
  * @param url request URL, string, optional
  * @returns unique 32 bytes uuidv4 hash
  */
-function idempotencyKeyFrom(data: unknown, url?: string): string {
+export function idempotencyKeyFrom(data: unknown, url?: string): string {
   let h1 = 0xdeadbeef, h2 = 0x41c6ce57, h3 = 0xfeadcabe, h4 = 0x93a5f713
 
   const str = typeof data === 'string' ? data + url : JSON.stringify(data) + url
@@ -427,4 +448,11 @@ function idempotencyKeyFrom(data: unknown, url?: string): string {
     (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0')
 
   return 'xxxxxxxx-xxxx-4xxx-xxxx-xxxxxxxxxxxx'.replace(/[x]/g, (_, p) => hash[p % 32])
+}
+
+function updateResponseTime(config: ConfigMetaData) {
+  config.metadata = {
+    ...config.metadata,
+    duration: +new Date() - (config.metadata?.startTime as number ?? 0)
+  }
 }

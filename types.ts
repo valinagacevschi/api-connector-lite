@@ -1,13 +1,9 @@
-import { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
-
-export interface Headers {
-  [key: string]: string
-}
+import { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse } from 'axios'
 
 export type ExtendedAxiosInstance = AxiosInstance & {
   refreshToken: () => Promise<void>
-  updateHeaders: (headers: Headers) => void
-  getApiHeaders: () => Headers
+  updateHeaders: (headers: Partial<AxiosRequestHeaders>) => void
+  getApiHeaders: () => AxiosRequestHeaders
   stepUp: (username?: string, passcode?: string) => Promise<unknown>
 }
 
@@ -19,14 +15,11 @@ export type ConnectionConfig = AxiosRequestConfig & {
   cancelOldRequest?: boolean
   retryOnTimeout?: boolean
   useReactotron?: boolean
-}
-
-type AxiosRetriableRequestConfig = AxiosRequestConfig & {
-  didRetry: boolean
+  useResponseTime?: boolean
 }
 
 export type AxiosErrorWithRetriableRequestConfig = AxiosError & {
-  config: AxiosRetriableRequestConfig
+  config: AxiosRequestConfig & ConfigMetaData
 }
 
 export interface RefreshTokenResponse {
@@ -77,4 +70,7 @@ export type StepUpPayload = {
   transactionId?: string
   config?: AxiosRequestConfig
   authenticationMethods?: string
+}
+export type ConfigMetaData = {
+  metadata?: Record<string, unknown>
 }

@@ -50,6 +50,7 @@ ApiConnector.getInstance('default', {
   cancelOldRequests: false, // cancel new requests
   stepUpAuthEnabled: true, // enable stepUpAuth
   retryOnTimeout: false, // disable timeout retries
+  useResponseTime: true, // enable response time calculation
 })
 ```
 You can call the `.getInstance('default', {...})` multiple times to overwrite certain options.
@@ -91,6 +92,7 @@ The following options can be used on top of the [**axios** options](https://gith
 - `useIdempotency` - enable static idempotency key calculation based on payload for `post`, `put` and `patch` methods; default `true`
 - `cancelOldRequests` - enable repeated request cancellation; if the current request did not completeded before a new same request was made, either the existing request or the new request will be cancelled, depending on this flag's value; default `undefined` (disabled).
 - `stepUpAuthEnabled` - flag to enable StepUp Authentication (reauthentication with user/password) before the request will be processed; defaut `false`
+- `useResponseTime` - flag to enable the response time calculation for both request success or error. The duration of the request can be found in the `config.metadata.duration` of `response` or `error` object; default: `false`
 
 **Note**: Don't forget to add **axios** mandatory parameter `baseURL`.
 ## Usage examples
