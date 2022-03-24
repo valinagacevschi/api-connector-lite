@@ -112,10 +112,14 @@ const ApiConnector = (() => {
       runWhen: () => retryOnTimeout,
     })
     instance.interceptors.response.use((response) => {
-      updateResponseTime(response.config as ConfigMetaData)
+      if (useResponseTime) {
+        updateResponseTime(response.config as ConfigMetaData)
+      }
       return response
     }, (error) => {
-      updateResponseTime(error.config)
+      if (useResponseTime) {
+        updateResponseTime(error.config)
+      }
       return Promise.reject(error)
     }, {
       runWhen: () => useResponseTime,
@@ -129,7 +133,7 @@ const ApiConnector = (() => {
     function authenticationInterceptor(
       requestConfig: AxiosRequestConfig,
     ): AxiosRequestConfig {
-      if (requestConfig.headers) {
+      if (autoRefreshToken && requestConfig.headers) {
         requestConfig.headers['Authorization'] = `Bearer ${tokens.accessToken}`
       }
       return requestConfig
@@ -183,7 +187,9 @@ const ApiConnector = (() => {
     function cancelResponseInterceptor(
       response: AxiosResponse<RefreshTokenResponse>,
     ): AxiosResponse<RefreshTokenResponse> {
-      delete currentExecutingRequests[response.request?.responseURL]
+      if (cancelOldRequest !== undefined) {
+        delete currentExecutingRequests[response.request?.responseURL]
+      }
       return response
     }
 
@@ -195,15 +201,17 @@ const ApiConnector = (() => {
      * @param error: AxiosErrorWithRetriableRequestConfig
      */
     function cancelErrorInterceptor(error: AxiosErrorWithRetriableRequestConfig) {
-      if (axios.isCancel(error)) {
-        return Promise.resolve()
-      }
-      const {
-        config: { url = '' },
-      } = error
-
-      if (currentExecutingRequests[url]) {
-        delete currentExecutingRequests[url]
+      if (cancelOldRequest !== undefined) {
+        if (axios.isCancel(error)) {
+          return Promise.resolve()
+        }
+        const {
+          config: { url = '' },
+        } = error
+        
+        if (currentExecutingRequests[url]) {
+          delete currentExecutingRequests[url]
+        }
       }
       return Promise.reject(error)
     }
@@ -236,12 +244,14 @@ const ApiConnector = (() => {
      * @param error: AxiosErrorWithRetriableRequestConfig
      */
     function timeOutInterceptor(error: AxiosErrorWithRetriableRequestConfig) {
-      const { config, response, code, message } = error
-      const { status } = response ?? {}
-      if ((code === 'ECONNABORTED' && message.match(/timeout/)) || status === 504) {
-        const { timeout, ...request } = config
-        if ((timeout ?? 1e10) < 6e4) {
-          instance.request({ ...request, timeout: (timeout ?? 1e3) * 10 })
+      if (retryOnTimeout) {
+        const { config, response, code, message } = error
+        const { status } = response ?? {}
+        if ((code === 'ECONNABORTED' && message.match(/timeout/)) || status === 504) {
+          const { timeout, ...request } = config
+          if ((timeout ?? 1e10) < 6e4) {
+            instance.request({ ...request, timeout: (timeout ?? 1e3) * 10 })
+          }
         }
       }
       return Promise.reject(error)
@@ -255,7 +265,7 @@ const ApiConnector = (() => {
     function refreshTokenInterceptor(error: AxiosErrorWithRetriableRequestConfig) {
       const { response: { status, data = {} } = {}, config } = error
 
-      if (status === ACCESS_TOKEN_EXPIRED) {
+      if (autoRefreshToken && status === ACCESS_TOKEN_EXPIRED) {
         if (config.metadata?.didRetry) {
           return Promise.reject(data)
         }
@@ -272,16 +282,18 @@ const ApiConnector = (() => {
      * @param error: AxiosErrorWithRetriableRequestConfig
      */
     function stepUpAuthInterceptor(error: AxiosErrorWithRetriableRequestConfig) {
-      const { response, config } = error
-      const { status, data } = response || {}
-      const { transactionId, authenticationMethods } = data || {}
-
-      if (status === STEP_UP_REQUIRED && transactionId) {
-        config.headers ??= {}
-        config.headers['X-TransactionId'] = `${transactionId}`
-        stepUpPayload.transactionId = transactionId
-        stepUpPayload.authenticationMethods = authenticationMethods
-        stepUpPayload.config = config
+      if (stepUpAuthEnabled) {
+        const { response, config } = error
+        const { status, data } = response || {}
+        const { transactionId, authenticationMethods } = data || {}
+        
+        if (status === STEP_UP_REQUIRED && transactionId) {
+          config.headers ??= {}
+          config.headers['X-TransactionId'] = `${transactionId}`
+          stepUpPayload.transactionId = transactionId
+          stepUpPayload.authenticationMethods = authenticationMethods
+          stepUpPayload.config = config
+        }
       }
       return Promise.reject(error)
     }
@@ -335,6 +347,9 @@ const ApiConnector = (() => {
       username?: string,
       passcode?: string,
     ): Promise<AxiosResponse<unknown, unknown>> {
+      if (!stepUpPayload.config && !stepUpPayload.transactionId) {
+        return Promise.reject()
+      }
       const payload =
         username && passcode
           ? { username, passcode }
