@@ -6,7 +6,7 @@ type Request = http.IncomingMessage & {
 }
 
 export default (port: number, mockData = {}): Promise<http.Server> => {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const server = http.createServer((req, response) => {
       const url = req.url
       if (url === '/ok') {
@@ -16,7 +16,9 @@ export default (port: number, mockData = {}): Promise<http.Server> => {
 
       if (url?.startsWith('/echo')) {
         const echo = url.slice(6)
-        const params = url.includes('?') ? Object.fromEntries(new URLSearchParams(echo)) : undefined
+        const params = url.includes('?')
+          ? Object.fromEntries(new URLSearchParams(echo))
+          : undefined
         sendResponse(response, 200, JSON.stringify({ echo, params }))
         return
       }
@@ -38,18 +40,18 @@ export default (port: number, mockData = {}): Promise<http.Server> => {
       if (url?.startsWith('/post')) {
         const status = +(url?.split('/')?.pop() ?? '200') || 200
         const request = req as Request
-        processPost(request, response, function() {
+        processPost(request, response, function () {
           sendResponse(response, status, JSON.stringify(request.post))
         })
       }
 
       if (url?.startsWith('/v1/oauth2/refresh')) {
         const request = req as Request
-        processPost(request, response, function() {
-          const refreshToken  = request.post.refreshToken as string
+        processPost(request, response, function () {
+          const refreshToken = request.post.refreshToken as string
           const tokens = {
             accessToken: refreshToken,
-            refreshToken: refreshToken.split('').reverse().join()
+            refreshToken: refreshToken.split('').reverse().join(),
           }
           sendResponse(response, 200, JSON.stringify(tokens))
         })
@@ -57,10 +59,10 @@ export default (port: number, mockData = {}): Promise<http.Server> => {
 
       if (url?.startsWith('/v1/oauth2/stepup')) {
         const request = req as Request
-        processPost(request, response, function() {
-          const username  = request.post.username as string
-          const passcode  = request.post.passcode as string
-          const refreshToken  = request.post.refreshToken as string
+        processPost(request, response, function () {
+          const username = request.post.username as string
+          const passcode = request.post.passcode as string
+          const refreshToken = request.post.refreshToken as string
           const authenticationMethod = request.post.authenticationMethod as string
           const newResponse = {
             username,
@@ -76,7 +78,6 @@ export default (port: number, mockData = {}): Promise<http.Server> => {
   })
 }
 
-
 type AddressInfo = {
   address: string
   family: string
@@ -84,18 +85,24 @@ type AddressInfo = {
 }
 
 export { Server } from 'http'
-export const getFreePort = (): Promise<number> => new Promise(resolve => {
-  const server = net.createServer()
-  server.listen(() => {
-    const { port } = server.address() as AddressInfo
-    server.close(() => resolve(port))
+export const getFreePort = (): Promise<number> =>
+  new Promise((resolve) => {
+    const server = net.createServer()
+    server.listen(() => {
+      const { port } = server.address() as AddressInfo
+      server.close(() => resolve(port))
+    })
   })
-})
 
-function processPost(request: Request, response: http.ServerResponse, callback?: Function) {
+function processPost(
+  request: Request,
+  response: http.ServerResponse,
+  callback?: () => void,
+) {
   let queryData = ''
-  if (typeof callback !== 'function')
+  if (typeof callback !== 'function') {
     return null
+  }
 
   request.on('data', function (data) {
     queryData += data

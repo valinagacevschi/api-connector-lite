@@ -11,17 +11,17 @@ test.before(async () => {
   ApiConnector.getInstance('default', { baseURL: `http://localhost:${port}` })
 })
 
-test.after.always('cleanup', (t) => {
+test.after.always('cleanup', () => {
   server?.close()
 })
 
-test('get can be used with async/await', async t => {
+test('get can be used with async/await', async (t) => {
   const response = await ApiConnector.getInstance().get('/number/200')
   t.is(response.status, 200)
   t.deepEqual(response.data, MOCK)
 })
 
-test('post, put, patch can be used with async/await', async t => {
+test('post, put, patch can be used with async/await', async (t) => {
   const instance = ApiConnector.getInstance()
   const response = await instance.post('/post/200', { x: 1, y: 2 })
   t.is(response.request.method, 'POST')

@@ -42,8 +42,7 @@
   },
   "ava": {
     "files": [
-      "tests/**/*.ts",
-      "!tests/setup.ts"
+      "tests/**/*.ts"
     ],
     "extensions": [
       "js",

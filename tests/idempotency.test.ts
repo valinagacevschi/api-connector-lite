@@ -12,7 +12,7 @@ test.before(async () => {
   ApiConnector.getInstance('default', { baseURL: `http://localhost:${port}` })
 })
 
-test.after.always('cleanup', (t) => {
+test.after.always('cleanup', () => {
   server?.close()
 })
 
@@ -54,22 +54,21 @@ test('has no idempotency for get with a 200', async (t) => {
 test('has idempotency disabled for put post and patch', async (t) => {
   const instance = ApiConnector.getInstance('default', {
     baseURL: `http://localhost:${port}`,
-    useIdempotency: false
+    useIdempotency: false,
   })
-  
+
   const r1 = await instance.post('/number/200')
   t.is(r1.status, 200)
   t.is(r1.config.headers?.['Idempotency-Key'], undefined)
   t.deepEqual(r1.data, MOCK)
-  
+
   const r2 = await instance.put('/number/200')
   t.is(r2.status, 200)
   t.is(r2.config.headers?.['Idempotency-Key'], undefined)
   t.deepEqual(r2.data, MOCK)
-  
+
   const r3 = await instance.patch('/number/200')
   t.is(r3.status, 200)
   t.is(r3.config.headers?.['Idempotency-Key'], undefined)
   t.deepEqual(r3.data, MOCK)
 })
-

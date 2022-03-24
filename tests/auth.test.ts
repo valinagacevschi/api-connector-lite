@@ -1,5 +1,5 @@
 import test from 'ava'
-import { ApiConnector, idempotencyKeyFrom, to } from '../'
+import { ApiConnector, idempotencyKeyFrom } from '../'
 import newServer, { getFreePort, Server } from './_server'
 
 let server: Server
@@ -11,7 +11,7 @@ test.before(async () => {
   ApiConnector.getInstance('default', { baseURL: `http://localhost:${port}` })
 })
 
-test.after.always('cleanup', (t) => {
+test.after.always('cleanup', () => {
   server?.close()
 })
 
@@ -29,7 +29,6 @@ test('has set correctly accessToken', async (t) => {
   t.is(Authorization, `Bearer ${payload.accessToken}`)
   t.deepEqual(response.data, payload)
 })
-
 
 test('has new tokens when 401', async (t) => {
   const instance = ApiConnector.getInstance()
@@ -49,10 +48,10 @@ test('has new tokens when 401', async (t) => {
   })
 })
 
-test('has no access token when disabled', async (t)=> {
+test('has no access token when disabled', async (t) => {
   const instance = ApiConnector.getInstance('noauth', {
     baseURL: `http://localhost:${port}`,
-    autoRefreshToken: false
+    autoRefreshToken: false,
   })
   const payload = {
     accessToken: '1234567890',

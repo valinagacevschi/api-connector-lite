@@ -33,39 +33,45 @@ test('has set correctly TransactionId with u&p', async (t) => {
 test('has set correctly TransactionId with refreshToken', async (t) => {
   const instance = ApiConnector.getInstance()
   await instance.get('/sleep/100')
-  await instance.post('/post/403', {
-    text: 1,
-    transactionId: 1234,
-    accessToken: 'aa',
-    refreshToken: 'bb',
-  }).catch(async (error) => {
-    t.is(error.response.status, 403)
-    // the 403 response error with transactionId in payload popupated the headers
-    t.is(error.config.headers?.['X-TransactionId'], '1234')
-    await instance.stepUp().catch((error) => {
-      t.deepEqual(error.response.data, {
-        text: 1,
-        transactionId: 1234,
-        accessToken: 'aa',
-        refreshToken: 'bb',
+  await instance
+    .post('/post/403', {
+      text: 1,
+      transactionId: 1234,
+      accessToken: 'aa',
+      refreshToken: 'bb',
+    })
+    .catch(async (error) => {
+      t.is(error.response.status, 403)
+      // the 403 response error with transactionId in payload popupated the headers
+      t.is(error.config.headers?.['X-TransactionId'], '1234')
+      await instance.stepUp().catch((error) => {
+        t.deepEqual(error.response.data, {
+          text: 1,
+          transactionId: 1234,
+          accessToken: 'aa',
+          refreshToken: 'bb',
+        })
       })
     })
-  })
 })
 
 test('has no TransactionId if stepup disabled', async (t) => {
-  const instance = ApiConnector.getInstance('default', { baseURL: `http://localhost:${port}` })
-  await instance.get('/sleep/100')
-  await instance.post('/post/403', {
-    text: 1,
-    transactionId: 1234,
-    accessToken: 'aa',
-    refreshToken: 'bb',
-  }).catch(async (error) => {
-    t.is(error.response.status, 403)
-    t.is(error.config.headers?.['X-TransactionId'], undefined)
-    await instance.stepUp().catch((error) => {
-      t.is(error, undefined)
-    })
+  const instance = ApiConnector.getInstance('default', {
+    baseURL: `http://localhost:${port}`,
   })
+  await instance.get('/sleep/100')
+  await instance
+    .post('/post/403', {
+      text: 1,
+      transactionId: 1234,
+      accessToken: 'aa',
+      refreshToken: 'bb',
+    })
+    .catch(async (error) => {
+      t.is(error.response.status, 403)
+      t.is(error.config.headers?.['X-TransactionId'], undefined)
+      await instance.stepUp().catch((error) => {
+        t.is(error, undefined)
+      })
+    })
 })

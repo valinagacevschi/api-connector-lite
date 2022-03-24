@@ -14,7 +14,7 @@ test.before(async () => {
   })
 })
 
-test.after.always('cleanup', (t) => {
+test.after.always('cleanup', () => {
   server?.close()
 })
 
@@ -60,7 +60,9 @@ test('PATCH speed test slower than 300', async (t) => {
 })
 
 test('zero duration for post, put, patch if turned off', async (t) => {
-  const instance = ApiConnector.getInstance('default', { baseURL: `http://localhost:${port}` })
+  const instance = ApiConnector.getInstance('default', {
+    baseURL: `http://localhost:${port}`,
+  })
   const r1 = await instance.put('/sleep/100', { a: 111, b: 222 })
   const d1 = ((r1.config as MetaData)?.metadata?.duration ?? 0) as number
   t.is(d1, 0)

@@ -10,7 +10,7 @@ test.before(async () => {
   ApiConnector.getInstance('default', { baseURL: `http://localhost:${port}` })
 })
 
-test.after.always('cleanup', (t) => {
+test.after.always('cleanup', () => {
   server?.close()
 })
 
@@ -23,7 +23,7 @@ test('GET supports params', async (t) => {
     params: {
       a: '1',
       b: '2',
-    }
+    },
   })
 })
 

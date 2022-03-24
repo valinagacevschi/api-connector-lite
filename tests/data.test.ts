@@ -3,7 +3,7 @@ import { ApiConnector } from '../'
 import newServer, { getFreePort, Server } from './_server'
 
 const HEADERS = {
-  Accept: 'application/json',
+  'Accept': 'application/json',
   'Content-Type': 'application/json',
   'User-Agent': 'axios/0.26.0',
 }
@@ -16,7 +16,7 @@ test.before(async () => {
   ApiConnector.getInstance('default', { baseURL: `http://localhost:${port}` })
 })
 
-test.after.always('cleanup', (t) => {
+test.after.always('cleanup', () => {
   server?.close()
 })
 
