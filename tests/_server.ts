@@ -54,6 +54,23 @@ export default (port: number, mockData = {}): Promise<http.Server> => {
           sendResponse(response, 200, JSON.stringify(tokens))
         })
       }
+
+      if (url?.startsWith('/v1/oauth2/stepup')) {
+        const request = req as Request
+        processPost(request, response, function() {
+          const username  = request.post.username as string
+          const passcode  = request.post.passcode as string
+          const refreshToken  = request.post.refreshToken as string
+          const authenticationMethod = request.post.authenticationMethod as string
+          const newResponse = {
+            username,
+            passcode,
+            refreshToken,
+            authenticationMethod,
+          }
+          sendResponse(response, 200, JSON.stringify(newResponse))
+        })
+      }
     })
     server.listen(port, 'localhost', () => resolve(server))
   })
