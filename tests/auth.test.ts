@@ -3,9 +3,10 @@ import { ApiConnector, idempotencyKeyFrom, to } from '../'
 import newServer, { getFreePort, Server } from './_server'
 
 let server: Server
+let port = 3000
 
 test.before(async () => {
-  const port = await getFreePort()
+  port = await getFreePort()
   server = await newServer(port)
   ApiConnector.getInstance('default', { baseURL: `http://localhost:${port}` })
 })
@@ -40,10 +41,31 @@ test('has new tokens when 401', async (t) => {
   t.is(response.status, 200)
   const { Authorization } = instance.getApiHeaders()
   t.is(Authorization, `Bearer ${payload.accessToken}`)
-  
+
   await instance.post('/post/401', { v: 1 }).catch((error) => {
     t.deepEqual(error, { v: 1 })
     const { Authorization } = instance.getApiHeaders()
     t.is(Authorization, `Bearer ${payload.refreshToken}`)
+  })
+})
+
+test('has no access token when disabled', async (t)=> {
+  const instance = ApiConnector.getInstance('noauth', {
+    baseURL: `http://localhost:${port}`,
+    autoRefreshToken: false
+  })
+  const payload = {
+    accessToken: '1234567890',
+    refreshToken: 'aaa-bbb-ccc-ddd',
+  }
+  const response = await instance.post('/post', payload)
+  t.is(response.status, 200)
+  const { Authorization } = instance.getApiHeaders()
+  t.falsy(Authorization)
+  await instance.post('/post/401', { v: 1 }).catch((error) => {
+    t.is(error.response.status, 401)
+    t.deepEqual(error.response.data, { v: 1 })
+    const { Authorization } = instance.getApiHeaders()
+    t.falsy(Authorization)
   })
 })

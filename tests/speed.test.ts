@@ -3,9 +3,10 @@ import { ApiConnector } from '../'
 import newServer, { getFreePort, Server } from './_server'
 
 let server: Server
+let port = 3000
 
 test.before(async () => {
-  const port = await getFreePort()
+  port = await getFreePort()
   server = await newServer(port)
   ApiConnector.getInstance('default', {
     baseURL: `http://localhost:${port}`,
@@ -56,4 +57,28 @@ test('PATCH speed test slower than 300', async (t) => {
   t.is(resp.config.method, 'put')
   t.is(resp.status, 200)
   t.deepEqual(resp.data, { status: 'OK' })
+})
+
+test('zero duration for post, put, patch if turned off', async (t) => {
+  const instance = ApiConnector.getInstance('default', { baseURL: `http://localhost:${port}` })
+  const r1 = await instance.put('/sleep/100', { a: 111, b: 222 })
+  const d1 = ((r1.config as MetaData)?.metadata?.duration ?? 0) as number
+  t.is(d1, 0)
+  t.is(r1.config.method, 'put')
+  t.is(r1.status, 200)
+  t.deepEqual(r1.data, { status: 'OK' })
+
+  const r2 = await instance.put('/sleep/100', { a: 111, b: 222 })
+  const d2 = ((r2.config as MetaData)?.metadata?.duration ?? 0) as number
+  t.is(d2, 0)
+  t.is(r2.config.method, 'put')
+  t.is(r2.status, 200)
+  t.deepEqual(r2.data, { status: 'OK' })
+
+  const r3 = await instance.put('/sleep/100', { a: 111, b: 222 })
+  const d3 = ((r3.config as MetaData)?.metadata?.duration ?? 0) as number
+  t.is(d3, 0)
+  t.is(r3.config.method, 'put')
+  t.is(r3.status, 200)
+  t.deepEqual(r3.data, { status: 'OK' })
 })

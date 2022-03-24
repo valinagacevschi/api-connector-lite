@@ -24,3 +24,11 @@ test('timeout 3sec', async (t) => {
     t.is(error.message, 'timeout of 3000ms exceeded')
   })
 })
+
+test('no default timeout', async (t) => {
+  const instance = ApiConnector.getInstance()
+  await instance.get('/sleep/3001', { timeout: 0 }).then(response => {
+    t.is(response.config.method, 'get')
+    t.is(response.config.timeout, 0)
+  })
+})
