@@ -4,6 +4,7 @@ import axios, {
   AxiosRequestHeaders,
   AxiosResponse,
 } from 'axios'
+import * as debugWebAxios from './adapters/debugWebAxios'
 import {
   AsyncResponse,
   AxiosErrorWithRetriableRequestConfig,
@@ -35,8 +36,8 @@ const ApiConnector = (() => {
       cancelOldRequest,
       stepUpAuthEnabled = false,
       retryOnTimeout = true,
-      useReactotron = false,
       useResponseTime = false,
+      tron,
       headers: inputHeaders,
       ...axiosConfig
     } = config
@@ -63,9 +64,11 @@ const ApiConnector = (() => {
      * Create main instance. Can be an axios instance or a debugWebAxios instance with reactotron
      * support for web
      */
-    const instance = axios.create({
+    const factory = global.window?.location ? debugWebAxios : axios
+    const instance = factory.create({
       ...DEFAULT_CONFIG,
       ...axiosConfig,
+      tron,
     }) as ExtendedAxiosInstance
 
     /**
@@ -315,9 +318,10 @@ const ApiConnector = (() => {
     /**
      * Create a separate axions instance for auth refresh token
      */
-    const refreshInstance: AxiosInstance = axios.create({
+    const refreshInstance: AxiosInstance = factory.create({
       ...DEFAULT_CONFIG,
       ...axiosConfig,
+      tron,
       headers,
     })
 

@@ -8,6 +8,7 @@ This API connector can be used with any Javascript framework currently supported
 4. **Idempotency Support** - all `POST`, `PUT` and `PATCH` requests will automatically include an idempotency key in the header (`Idempotency-Key`) as a hash build from the request's URL and payload, in `uuidv4` format.
 5. **Cancel Repeated Requests** - if an identical request is sent more than once, either future requests will be canceled until the initial one responded or the existing will be canceled and the new one will be processed.
 6. **StepUp Support** - Require users to authenticate with a stronger mechanism to access sensitive information or perform certain transactions.
+7. **Support for Reactotron** - For Cryptomathic-enabled API environments, this might be helpful to log all API requests. Check the `Reactotron` site on how to install and use it.
 # Instalation
 You can use either `npm` or `yarn` to add it to your project.
 `yarn add api-connector-lite` or `npm install api-connector-lite`
@@ -93,6 +94,7 @@ The following options can be used on top of the [**axios** options](https://gith
 - `cancelOldRequests` - enable repeated request cancellation; if the current request did not completeded before a new same request was made, either the existing request or the new request will be cancelled, depending on this flag's value; default `undefined` (disabled).
 - `stepUpAuthEnabled` - flag to enable StepUp Authentication (reauthentication with user/password) before the request will be processed; defaut `false`
 - `useResponseTime` - flag to enable the response time calculation for both request success or error. The duration of the request can be found in the `config.metadata.duration` of `response` or `error` object; default: `false`
+- `tron` - an optional instance of `Reactotron` after being configured for logging; this might be useful for API requests logging when this component in a web app; default `undefined`
 
 **Note**: Don't forget to add **axios** mandatory parameter `baseURL`.
 ## Usage examples

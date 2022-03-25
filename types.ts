@@ -1,4 +1,10 @@
-import { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse } from 'axios'
+import {
+  AxiosError,
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosRequestHeaders,
+  AxiosResponse,
+} from 'axios'
 
 export type ExtendedAxiosInstance = AxiosInstance & {
   refreshToken: () => Promise<void>
@@ -14,8 +20,8 @@ export type ConnectionConfig = AxiosRequestConfig & {
   useIdempotency?: boolean
   cancelOldRequest?: boolean
   retryOnTimeout?: boolean
-  useReactotron?: boolean
   useResponseTime?: boolean
+  tron?: ReactotronType
 }
 
 export type AxiosErrorWithRetriableRequestConfig = AxiosError & {
@@ -73,4 +79,8 @@ export type StepUpPayload = {
 }
 export type ConfigMetaData = {
   metadata?: Record<string, unknown>
+}
+export type ReactotronType = {
+  display: (config?: unknown) => void
+  apiResponse?: (request: unknown, response: unknown, duration: unknown) => void
 }

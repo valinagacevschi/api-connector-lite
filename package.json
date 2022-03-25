@@ -1,6 +1,6 @@
 {
   "name": "api-connector-lite",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "An axios-based API connector to handle complex aspects of real-life APIs.",
   "main": "index.ts",
   "scripts": {
