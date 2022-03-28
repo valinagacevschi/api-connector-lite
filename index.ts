@@ -267,9 +267,10 @@ const ApiConnector = (() => {
         const { status } = response ?? {}
         if ((code === 'ECONNABORTED' && message.match(/timeout/)) || status === 504) {
           const { timeout, ...request } = config
-          if ((timeout ?? 1e10) < 6e4) {
-            instance.request({ ...request, timeout: (timeout ?? 1e3) * 10 })
+          if ((timeout ?? 1e10) > 6e4) {
+            return Promise.reject(error)
           }
+          return instance.request({ ...request, timeout: (timeout ?? 1e3) * 5 })
         }
       }
       return Promise.reject(error)
