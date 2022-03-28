@@ -16,12 +16,11 @@ test.after.always('cleanup', () => {
 
 test('timeout 3sec', async (t) => {
   const instance = ApiConnector.getInstance()
-  await instance.get('/sleep/3001').catch((error) => {
-    t.is(error.config.method, 'get')
-    t.is(error.config.timeout, 3000)
-    t.falsy(error.response)
-    t.truthy(error.isAxiosError)
-    t.is(error.message, 'timeout of 3000ms exceeded')
+  await instance.get('/sleep/3001').then((response) => {
+    t.is(response.statusText, 'OK')
+    t.is(response.status, 200)
+    t.is(response.config.url, '/sleep/3001')
+    t.is(response.config.timeout, 3000 * 5)
   })
 })
 
