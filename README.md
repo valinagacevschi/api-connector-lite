@@ -164,3 +164,5 @@ const response = await ApiConnector.getInstance().stepUp(username, passcode)
 ```
 ## Why ApiConnectorLite?
 The `ApiConnector` (for now in a private github repo) includes an `HTTP` adapter from  **[Cryptomathic](https://www.cryptomathic.com/)** which can optionally replace the current **[axios](https://github.com/axios/axios)** one, for increased, banking-grade security. This is not an opensource software, thus the private repo.
+# Important Note
+The `api-connector-lite` depends on `axios` **v0.26.0** which have a typescript issue by not including the **`AxiosInterceptorOptions `** in the `index.d.ts` file. You may need to patch this file if the tests are failing. For that you need to update the `index.d.ts` file in your axios's `node_module` folder with the one from the `axios` github repo.
