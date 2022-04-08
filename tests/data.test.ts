@@ -5,7 +5,7 @@ import newServer, { getFreePort, Server } from './_server'
 const HEADERS = {
   'Accept': 'application/json',
   'Content-Type': 'application/json',
-  'User-Agent': 'axios/0.26.0',
+  'User-Agent': 'axios/0.26.1',
 }
 const MOCK = { a: { b: [1, 2, 3] } }
 let server: Server
