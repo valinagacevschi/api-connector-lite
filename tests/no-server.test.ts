@@ -13,7 +13,7 @@ test('has a response despite no server', async (t) => {
     .catch(({ code, isAxiosError, message, response }) => {
       t.is(code, 'ECONNREFUSED')
       t.truthy(isAxiosError)
-      t.is(message, 'connect ECONNREFUSED 127.0.0.1:32142')
+      t.is(message, 'connect ECONNREFUSED ::1:32142')
       t.falsy(response)
     })
 })
