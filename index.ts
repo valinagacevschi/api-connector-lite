@@ -17,9 +17,9 @@ import {
 } from './types'
 
 const ACCESS_TOKEN_EXPIRED = 401
-const REFRESH_PATH = '/v1/oauth2/refresh'
+const REFRESH_PATH = '/oauth2/refresh'
 const STEP_UP_REQUIRED = 403
-const STEPUP_PATH = '/v1/oauth2/stepup'
+const STEPUP_PATH = '/oauth2/stepup'
 
 const DEFAULT_CONFIG = { timeout: 3000 }
 const DEFAULT_HEADERS: AxiosRequestHeaders = {
@@ -31,14 +31,19 @@ const ApiConnector = (() => {
 
   function createInstance(name: string, config: ConnectionConfig): ExtendedAxiosInstance {
     const {
+      refreshPath = REFRESH_PATH,
+      stepupPath = STEPUP_PATH,
       autoRefreshToken = true,
-      useIdempotency = true,
+      useIdempotency = false,
       cancelOldRequest,
       stepUpAuthEnabled = false,
-      retryOnTimeout = true,
+      retryOnTimeout = false,
       useResponseTime = false,
+      useEtag = false,
       tron,
       headers: inputHeaders,
+      tokensPersist,
+      tokenRehydrate,
       ...axiosConfig
     } = config
 
@@ -58,17 +63,21 @@ const ApiConnector = (() => {
       refreshToken: undefined,
     }
 
+    tokenRehydrate?.().then(
+      ({ accessToken, refreshToken } = { accessToken: undefined, refreshToken: undefined }) => {
+        tokens.accessToken = accessToken ?? tokens.accessToken
+        tokens.refreshToken = refreshToken ?? tokens.refreshToken
+      });
+
     const stepUpPayload: StepUpPayload = {}
 
     /**
-     * Create main instance. Can be an axios instance or a debugWebAxios instance with reactotron
-     * support for web
+     * Create main instance. Can be an axios instance or a debugWebAxios instance
      */
     const factory = global.window?.location ? debugWebAxios : axios
     const instance = factory.create({
       ...DEFAULT_CONFIG,
       ...axiosConfig,
-      tron,
     }) as ExtendedAxiosInstance
 
     /**
@@ -252,6 +261,9 @@ const ApiConnector = (() => {
         if (refreshToken) {
           tokens.refreshToken = refreshToken
         }
+        if (accessToken && refreshToken) {
+          tokensPersist?.(tokens)
+        }
       }
       return response
     }
@@ -303,7 +315,7 @@ const ApiConnector = (() => {
       if (stepUpAuthEnabled) {
         const { response, config } = error
         const { status, data } = response || {}
-        const { transactionId, authenticationMethods } = data || {}
+        const { transactionId, authenticationMethods } =( data || {}) as StepUpPayload
 
         if (status === STEP_UP_REQUIRED && transactionId) {
           config.headers ??= {}
@@ -333,7 +345,7 @@ const ApiConnector = (() => {
     async function refreshToken(): Promise<void> {
       const { refreshToken } = tokens
       return refreshInstance
-        .post<RefreshTokenResponse>(REFRESH_PATH, { refreshToken })
+        .post<RefreshTokenResponse>(refreshPath, { refreshToken })
         .then(({ data }) => data)
         .then(({ accessToken, refreshToken }) => {
           tokens.accessToken = accessToken
@@ -387,7 +399,7 @@ const ApiConnector = (() => {
           ? { 'X-TransactionId': `${stepUpPayload.transactionId}` }
           : undefined),
       }
-      return instance.post(STEPUP_PATH, payload, { headers }).then(() =>
+      return instance.post(stepupPath, payload, { headers }).then(() =>
         instance
           .request(stepUpPayload.config as unknown as AxiosRequestConfig)
           .finally(() => {

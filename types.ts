@@ -14,6 +14,8 @@ export type ExtendedAxiosInstance = AxiosInstance & {
 }
 
 export type ConnectionConfig = AxiosRequestConfig & {
+  refreshPath?: string
+  stepupPath?: string
   apiKey?: string
   autoRefreshToken?: boolean
   stepUpAuthEnabled?: boolean
@@ -22,6 +24,9 @@ export type ConnectionConfig = AxiosRequestConfig & {
   retryOnTimeout?: boolean
   useResponseTime?: boolean
   tron?: ReactotronType
+  useEtag?: boolean
+  tokensPersist?: (tokens: RefreshTokenResponse) => Promise<unknown>
+  tokenRehydrate?: () => Promise<RefreshTokenResponse | undefined>
 }
 
 export type AxiosErrorWithRetriableRequestConfig = AxiosError & {

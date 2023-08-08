@@ -74,18 +74,14 @@ const tronifyResponse = (
 const debugTron =
   (config: AxiosRequestConfig, tron?: ReactotronType) =>
   (response: FetchResult): FetchResult => {
-    if (__DEV__) {
-      try {
-        const tronResponse = tronifyResponse(config, response)
-        tron?.apiResponse?.(...tronResponse)
-      } catch (e) {
-        console.warn('Tron debug error', e)
-      }
+    try {
+      const tronResponse = tronifyResponse(config, response)
+      tron?.apiResponse?.(...tronResponse)
+    } catch (e) {
+      console.warn('Tron debug error', e)
     }
     return response
   }
 
-export const tronLog =
-  (name: string, tron?: ReactotronType) =>
-  (value: unknown): void =>
-    __DEV__ ? tron?.display({ value, name, important: true }) : undefined
+export const tronLog = (name: string, tron?: ReactotronType) =>
+  (value: unknown): void => tron?.display({ value, name, important: true })
