@@ -4,6 +4,7 @@ import axios, {
   AxiosRequestHeaders,
   AxiosResponse,
 } from 'axios'
+import { Mutex } from 'async-mutex'
 import * as debugWebAxios from './adapters/debugWebAxios'
 import {
   AsyncResponse,
@@ -70,6 +71,11 @@ const ApiConnector = (() => {
       });
 
     const stepUpPayload: StepUpPayload = {}
+
+    /**
+     * Create mutex for refreshToken
+     */
+    const mutex = new Mutex()
 
     /**
      * Create main instance. Can be an axios instance or a debugWebAxios instance
@@ -255,12 +261,9 @@ const ApiConnector = (() => {
       if (autoRefreshToken) {
         const { accessToken, refreshToken } = response?.data ?? {}
 
-        if (accessToken) {
-          tokens.accessToken = accessToken
-        }
-        if (refreshToken) {
-          tokens.refreshToken = refreshToken
-        }
+        tokens.accessToken = accessToken ?? tokens.accessToken
+        tokens.refreshToken = refreshToken ?? tokens.refreshToken
+
         if (accessToken && refreshToken) {
           tokensPersist?.(tokens)
         }
@@ -341,16 +344,17 @@ const ApiConnector = (() => {
     /**
      * The refreshToken handler will be accessible from the instance
      * to be called when we need to force an Auth Token refresh.
+     * It use mutex to prevent multiple refresh requests.
      */
     async function refreshToken(): Promise<void> {
       const { refreshToken } = tokens
-      return refreshInstance
+      return mutex.runExclusive(() => refreshInstance
         .post<RefreshTokenResponse>(refreshPath, { refreshToken })
         .then(({ data }) => data)
         .then(({ accessToken, refreshToken }) => {
           tokens.accessToken = accessToken
           tokens.refreshToken = refreshToken
-        })
+        }))
     }
 
     /**

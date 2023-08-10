@@ -8,7 +8,8 @@
     "test:w": "ava --watch"
   },
   "dependencies": {
-    "axios": "^0.27"
+    "axios": "^0.27",
+    "async-mutex": "^0.4.0"
   },
   "repository": {
     "type": "git",
